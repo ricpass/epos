@@ -47,6 +47,8 @@ public:
     // Thread Queue
     typedef Ordered_Queue<Thread, Priority> Queue;
 
+    typedef Simple_list<Thread> List;
+
 public:
     Thread(int (* entry)(), 
            const State & state = READY, const Priority & priority = NORMAL, unsigned int stack_size = STACK_SIZE)
@@ -156,6 +158,8 @@ private:
     static Thread * volatile _running;
     static Queue _ready;
     static Queue _suspended;
+    static Queue _sleeping;
+    List _joining;
 };
 
 __END_SYS

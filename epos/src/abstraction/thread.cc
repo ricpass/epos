@@ -63,9 +63,12 @@ int Thread::join()
     lock();
 
     db<Thread>(TRC) << "Thread::join(this=" << this << ",state=" << _state << ")" << endl;
-
-    while(_state != FINISHING)
-        yield(); // implicit unlock()
+    
+    if(_state != FINISHING) {
+        Thread* running = running();
+	   _joining.insert(running);
+	   running->suspend(); // implicitly allows scheduling
+    }
 
     unlock();
 
@@ -158,6 +161,12 @@ void Thread::exit(int status)
     lock();
 
     db<Thread>(TRC) << "Thread::wakeup_all(running=" << running() << ")" << endl;
+    
+    Thread * thr = running();
+    while(!thr->_joining.empty()) {
+       thr->_joining.remove().resume(); // implict unlock
+	   lock();
+    }
 
     while(_ready.empty() && !_suspended.empty())
         idle(); // implicit unlock();
@@ -195,7 +204,7 @@ void Thread::reschedule()
 
 
 void Thread::implicit_exit() 
-{
+{	
     exit(CPU::fr()); 
 }
 
